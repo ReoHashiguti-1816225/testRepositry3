@@ -1,8 +1,66 @@
-#include<iostream>
+#include "DxLib.h"
+#include "main.h"
+#include "player.h"
+#include "stage.h"
+#include "keycheck.h"
 
-using namespace std;
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+{
+	//GMODE = MODE_INIT;
 
 
-int main(){
-	cout << "WORLD END" << endl;
+	SetGraphMode(
+		SCREEN_SIZE_X, SCREEN_SIZE_Y,   // int ScreenSizeX, ScreenSizeY
+		32                              // int ColorBitDepth
+										// int RefreshRate = 60
+	);
+	
+
+
+	ChangeWindowMode(true);
+
+	SetWindowText("‹tP‚Ìƒ`ƒLƒ“");
+	if (DxLib_Init() == -1)		// ‚c‚wƒ‰ƒCƒuƒ‰ƒŠ‰Šú‰»ˆ—
+	{
+		return -1;			// ƒGƒ‰[‚ª‹N‚«‚½‚ç’¼‚¿‚ÉI—¹
+	}
+
+	//SoundHundle = LoadSoundMem("Sound/bgm_maoudamashii_8bit27.mp3");
+
+	SetDrawScreen(DX_SCREEN_BACK);
+
+	
+	playerInit();
+	StageSystemInit();
+	
+	while (ProcessMessage() == 0   // while=0‚Ìê‡ŒJ‚è•Ô‚µ
+		&& CheckHitKey(KEY_INPUT_ESCAPE) == 0) //&=‰‰ŽZ‹L† &&=‚Ç‚¿‚ç‚à–ž‚½‚µ‚Ä‚¢‚éê‡
+	{
+		
+
+		ClsDrawScreen();	
+
+		
+		
+
+		playerUpdate();
+
+		{
+		
+			StageDraw();
+			playerDraw();
+		}
+		ScreenFlip();
+	}
+
+	DxLib_End();
+
+	return 0;				// ƒ\ƒtƒg‚ÌI—¹ 
 }
+
+
+
+
+
+
+
