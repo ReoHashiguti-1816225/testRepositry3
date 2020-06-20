@@ -7,22 +7,26 @@ CHARACTER ITEM;
 
 int itemimage[ITEMMAX];
 int RandCnt;
+int CNT2;
 //int Typerand;
 void iteminit()
 {
 	LoadDivGraph("image/ƒAƒCƒeƒ€.png",5,5,1,48,48,itemimage, true);
 
-	ITEM.pos = {0,0};
-	ITEM.flag = false;
-	ITEM.tyep =  GetRand(5);
-	RandCnt = 0;
+	ITEM.tyep = GetRand(5);
 	ITEM.Usetype = GetRand(4);
+
+	ITEM.flag = false;
+	RandCnt = 0;
+	CNT2 = 0;
 }
 
 void itemUpdate()
 {
-	RandCnt++;
-
+	if (CNT2 == 0)
+	{
+		RandCnt++;
+	}
 
 
 
@@ -57,13 +61,26 @@ void itemUpdate()
 		}
 	}
 	
-	if (RandCnt > 300)
+	if (RandCnt > 200)
 	{
-		ITEM.Usetype = GetRand(4);
-		ITEM.tyep = GetRand(5);
-		ITEM.flag = true;
+		
+
+			ITEM.flag = false;
+
 
 		RandCnt = 0;
+	}
+	if (RandCnt == 0)
+	{
+		CNT2++;
+		if (CNT2 > 200)
+		{
+			ITEM.Usetype = GetRand(4);
+			ITEM.tyep = GetRand(5);
+			ITEM.flag = true;
+
+			CNT2 = 0;
+		}
 	}
 
 }
@@ -73,8 +90,8 @@ void itemDraw()
 	if (ITEM.flag)
 	{
 		DrawGraph(ITEM.pos.x, ITEM.pos.y, itemimage[ITEM.Usetype], true);
-
-
+	
 	}
+	
 
 }

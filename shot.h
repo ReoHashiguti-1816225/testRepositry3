@@ -7,6 +7,7 @@ typedef struct {
 	XY pos;				// ˆÊ’u
 	XY size;			// »²½Ş
 	XY offsetSize;		// ·¬×’†‰›‚©‚ç‚Ì¶ãˆÊ’u
+	//HIT_TYPE type;
 	int animCnt;		// ±ÆÒ°¼®İ—p
 	int movespeed;
 	int lifeMax;

@@ -59,8 +59,9 @@ void StageSystemInit(void)
 
 void StageDraw(void)
 {
+	//DrawGraph(0, 0, BgImage, true);
 
-	DrawBox(0, 0, SCREEN_SIZE_X, SCREEN_SIZE_Y, 0xffffff, true);
+	//DrawBox(0, 0, SCREEN_SIZE_X, SCREEN_SIZE_Y, 0xffffff, true);
 	if (mappos.x <= 0)
 	{
 		mappos.x = 0;
@@ -74,6 +75,8 @@ void StageDraw(void)
 	{
 		for (int y = 0; y < CHIP_MAX_Y; y++)
 		{
+			//DrawLine(x * MAP_CHIP_SIZE_X, y * MAP_CHIP_SIZE_Y, x * MAP_CHIP_SIZE_X, 32 , 0xffff00);
+			//DrawLine(x * MAP_CHIP_SIZE_X, y * MAP_CHIP_SIZE_Y, 32, y * MAP_CHIP_SIZE_Y, 0xffff00);
 			DrawGraph(x * MAP_CHIP_SIZE_X - mappos.x, y * MAP_CHIP_SIZE_Y, mapimage[mapData[y][x]],true);
 			
 		}

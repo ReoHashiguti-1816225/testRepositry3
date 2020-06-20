@@ -6,7 +6,7 @@
 #include "Atack.h"
 #include "math.h"
 
-ATACK Atack/*[PLAYER_TYPE]*/;
+ATACK Atack[ATACK_MAX];
 ATACK ExAtack[EXATACK_MAX];
 
 int AtackImage;
@@ -22,7 +22,6 @@ int ExAtack3Image;
 int rotawait;
 int rotawait2;
 
-//通常攻撃
 void AtackSysinit(void)
 {
 	AtackImage = LoadGraph("image/くちばし - コピー.PNG", true);
@@ -32,126 +31,128 @@ void AtackSysinit(void)
 
 void AtackInit(void)
 {
-	for (int i = 0; i < PLAYER_TYPE; i++)
+	for (int i = 0; i < ATACK_MAX; i++)
 	{
-		Atack.flag = false;
-		Atack.pos = { 0,0 };
-		Atack.size = { 48,48 };
-		Atack.size2 = { 48,24 };
-		Atack.life = 0;
-		Atack.lifeMax = 40;
-		Atack.angle = 0;
-		Atack.angle2 = 0;
-		Atack.defaltangle = 0;
-		Atack.moveDir = DIR_RIGHT;
-		Atack.type = 0;
-		Atack.Cnt = 0;
+		Atack[i].flag = false;
+		Atack[i].pos = { 0,0 };
+		Atack[i].size = { 48,48 };
+		Atack[i].size2 = { 48,24 };
+		Atack[i].life = 0;
+		Atack[i].lifeMax = 40;
+		Atack[i].angle = 0;
+		Atack[i].angle2 = 0;
+		Atack[i].defaltangle = 0;
+		Atack[i].moveDir = DIR_RIGHT;
+		Atack[i].type = 0;
+		Atack[i].Cnt = 0;
 	}
 }
 
 void Atackcontrol(void)
 {
 	
-	for (int i = 0; i < PLAYER_TYPE; i++)
+	for (int i = 0; i < ATACK_MAX; i++)
 	{
-		if (Atack.flag == false)
+		if (Atack[i].flag == false)
 		{
-			Atack.angle2 = 0;
+			Atack[i].angle2 = 0;
 		}
 		//Atack.angle2++;
-		if ((Atack.flag == true)&&(Atack.life !=0))
+		if ((Atack[i].flag)&&(Atack[i].life !=0))
 		{
-			Atack.life--;
+			Atack[i].life--;
 
-			if (Atack.life <= 0)
+			if (Atack[i].life <= 0)
 			{
-				Atack.flag = false;
+				Atack[i].flag = false;
+				if ((!Atack[i].flag) && (Atack[i].type == 0))
+				{
+					if (player[0].flag)
+					{
+						player[0].AtackFlag = false;
+					}
+					if (player[2].flag)
+					{
+						player[2].AtackFlag = false;
+					}
+				}
+				if ((!Atack[i].flag) && (Atack[i].type == 1))
+				{
+					if (player[1].flag)
+					{
+						player[1].AtackFlag = false;
+					}
+					if (player[3].flag)
+					{
+						player[3].AtackFlag = false;
+					}
+				}
 			}
 		}
-		/*if (Atack.type == 0)
-		{
 		
-			if (Atack.moveDir == DIR_RIGHT)
-			{
-				i = i % 2;
-				Atack.pos.x = Atack.pos.x + 2;
-				if (Atack.pos.x > player[i].pos.x + 48)
-				{
-					Atack.pos.x = player[i].pos.x + 48;
-				}
-			}
-			if (Atack.moveDir == DIR_LEFT)
-			{
-				i = i % 2;
-				Atack.pos.x = Atack.pos.x - 2;
 
-				if (Atack.pos.x <= player[i].pos.x)
-				{
-					Atack.pos.x = player[i].pos.x ;
-				}
-			}
-		}*/
-
-		if (Atack.type == 1)
+		if (Atack[i].type == 1)
 		{
-			switch (Atack.moveDir)
+			switch (Atack[i].moveDir)
 			{
 			case DIR_LEFT:
-				Atack.angle2 -= DX_PI_F / 40;
+				Atack[i].angle2 -= DX_PI_F / 40;
 				break;
 			case DIR_RIGHT:
-				Atack.angle2 += DX_PI_F / 40;
+				Atack[i].angle2 += DX_PI_F / 40;
 				break;
 			default:
 				break;
 			}
 		}
+	
 	}
+
 }
 
 void AtackStartup(XY pPos, MOVE_DIR pDir , int type)
 {
-	for (int i = 0; i < PLAYER_TYPE; i++)
+	for (int i = 0; i < ATACK_MAX; i++)
 	{
-		if (!Atack.flag)
+		if (!Atack[i].flag)
 		{
-			Atack.life = Atack.lifeMax;
-			Atack.moveDir = pDir;
-			Atack.type = (type % 2);
-			//ExAtack.movespeed = 5;
-			Atack.Cnt++;
-			if ((Atack.moveDir == DIR_RIGHT) && (Atack.type == 0))
+			Atack[i].life = Atack[i].lifeMax;
+			Atack[i].moveDir = pDir;
+			Atack[i].type = (type % 2);
+			Atack[i].Cnt++;
+			if ((Atack[i].moveDir == DIR_RIGHT) && (Atack[i].type == 0))
 			{
-				Atack.pos = { pPos.x + 48 ,pPos.y - 10 };
+				Atack[i].pos = { pPos.x + 48 ,pPos.y - 10 };
 				
 			}
-			if ((Atack.moveDir == DIR_LEFT) && (Atack.type == 0))
+			if ((Atack[i].moveDir == DIR_LEFT) && (Atack[i].type == 0))
 			{
-				Atack.pos = { pPos.x - 48 ,pPos.y - 10 };
+				Atack[i].pos = { pPos.x - 48 ,pPos.y - 10 };
 
 			}
 
-			if ((Atack.moveDir == DIR_RIGHT) && (Atack.type == 1))
+			if ((Atack[i].moveDir == DIR_RIGHT) && (Atack[i].type == 1))
 			{
-				Atack.pos = { pPos.x + 50,pPos.y };
-				Atack.angle2 = 2;
+				Atack[i].pos = { pPos.x + 50,pPos.y };
+				Atack[i].angle2 = 2;
 
-				Atack.type = 1;
+				Atack[i].type = 1;
 				
 			}
-			if ((Atack.moveDir == DIR_LEFT) && (Atack.type == 1))
+			if ((Atack[i].moveDir == DIR_LEFT) && (Atack[i].type == 1))
 			{
 				
-				Atack.pos = { pPos.x -48,pPos.y  };
-				Atack.angle2 = 7.5;
-				Atack.type = 1;
+				Atack[i].pos = { pPos.x -48,pPos.y  };
+				Atack[i].angle2 = 7.5;
+				Atack[i].type = 1;
 
 			}
 
 
-			Atack.flag = true;
-
+			Atack[i].flag = true;
+			break;
 		}
+		
 	}
 }
 
@@ -159,229 +160,33 @@ void AtackStartup(XY pPos, MOVE_DIR pDir , int type)
 void AtackDraw(void)
 {
 	
-	for (int i = 0; i < PLAYER_TYPE; i++)
+	for (int i = 0; i < ATACK_MAX; i++)
 	{
-		if (Atack.flag)
+		if (Atack[i].flag)
 		{
-			if ((Atack.moveDir == DIR_RIGHT)&&(Atack.type == 0))
+			if ((Atack[i].moveDir == DIR_RIGHT)&&(Atack[i].type == 0))
 			{
-				DrawGraph(Atack.pos.x, Atack.pos.y, AtackImage, true);
+				DrawGraph(Atack[i].pos.x, Atack[i].pos.y, AtackImage, true);
 
-				////以下デバッグ
-				//DrawBox(Atack.pos.x,
-				//	Atack.pos.y,
-				//	Atack.pos.x +5,
-				//	Atack.pos.y + Atack.size.y ,
-				//	0xffffff, true);
-
-				//DrawBox(Atack.pos.x + 5,
-				//	Atack.pos.y+2,
-				//	Atack.pos.x + 10,
-				//	Atack.pos.y +47,
-				//	0x00ffff, true);
-
-				//DrawBox(Atack.pos.x + 10,
-				//	Atack.pos.y + 5,
-				//	Atack.pos.x + 15,
-				//	Atack.pos.y + 45,
-				//	0xff00ff, true);
-				//DrawBox(Atack.pos.x + 15,
-				//	Atack.pos.y + 8,
-				//	Atack.pos.x + 20,
-				//	Atack.pos.y + 43,
-				//	0xff00ff, true);
-				//DrawBox(Atack.pos.x + 20,
-				//	Atack.pos.y + 11,
-				//	Atack.pos.x + 25,
-				//	Atack.pos.y + 39,
-				//	0xff00ff, true);
-				//DrawBox(Atack.pos.x + 25,
-				//	Atack.pos.y + 14,
-				//	Atack.pos.x + 30,
-				//	Atack.pos.y + 36,
-				//	0xff00ff, true);
-				//DrawBox(Atack.pos.x + 30,
-				//	Atack.pos.y + 17,
-				//	Atack.pos.x + 35,
-				//	Atack.pos.y + 33,
-				//	0xff00ff, true);
-				//DrawBox(Atack.pos.x + 35,
-				//	Atack.pos.y + 20,
-				//	Atack.pos.x + 40,
-				//	Atack.pos.y + 30,
-				//	0xff00ff, true);
-				//DrawBox(Atack.pos.x + 40,
-				//	Atack.pos.y + 23,
-				//	Atack.pos.x + 45,
-				//	Atack.pos.y + 27,
-				//	0xff00ff, true);
 				
 			}
-			if ((Atack.moveDir == DIR_LEFT) && (Atack.type == 0))
+			if ((Atack[i].moveDir == DIR_LEFT) && (Atack[i].type == 0))
 			{
-				DrawTurnGraph(Atack.pos.x, Atack.pos.y, AtackImage, true);
-
-				//以下デバッグ
-			/*	DrawBox(Atack.pos.x,
-					Atack.pos.y+23,
-					Atack.pos.x + 5,
-					Atack.pos.y +27,
-					0xffffff, true);
-				DrawBox(Atack.pos.x + 5,
-					Atack.pos.y+20,
-					Atack.pos.x + 10,
-					Atack.pos.y +30,
-					0x00ffff, true);
-
-				DrawBox(Atack.pos.x + 10,
-					Atack.pos.y + 17,
-					Atack.pos.x + 15,
-					Atack.pos.y + 33,
-					0xff00ff, true);
-				DrawBox(Atack.pos.x + 15,
-					Atack.pos.y + 14,
-					Atack.pos.x + 20,
-					Atack.pos.y + 36,
-					0xff00ff, true);
-				DrawBox(Atack.pos.x + 20,
-					Atack.pos.y + 11,
-					Atack.pos.x + 25,
-					Atack.pos.y + 39,
-					0xff00ff, true);
-				DrawBox(Atack.pos.x + 25,
-					Atack.pos.y + 8,
-					Atack.pos.x + 30,
-					Atack.pos.y + 42,
-					0xff00ff, true);
-				DrawBox(Atack.pos.x + 30,
-					Atack.pos.y +  5,
-					Atack.pos.x + 35,
-					Atack.pos.y + 45,
-					0xff00ff, true);
-
-				DrawBox(Atack.pos.x + 35,
-					Atack.pos.y + 2,
-					Atack.pos.x + 40,
-					Atack.pos.y + 47,
-					0xff00ff, true);
-				DrawBox(Atack.pos.x + 40,
-					Atack.pos.y,
-					Atack.pos.x + 45,
-					Atack.pos.y + Atack.size.y,
-					0xff00ff, true);*/
+				DrawTurnGraph(Atack[i].pos.x, Atack[i].pos.y, AtackImage, true);
 				
 			}
-			if ((Atack.moveDir == DIR_RIGHT) && (Atack.type == 1))
+			if ((Atack[i].moveDir == DIR_RIGHT) && (Atack[i].type == 1))
 			{
-				DrawTurnGraph(Atack.pos.x, Atack.pos.y, AtackImage2, true);
+				DrawTurnGraph(Atack[i].pos.x, Atack[i].pos.y, AtackImage2, true);
 
-			/*	DrawBox(Atack.pos.x,
-					Atack.pos.y +15,
-					Atack.pos.x +12,
-					Atack.pos.y + Atack.size2.y,
-					0xff00ff, true);	
-				DrawBox(Atack.pos.x + 12,
-					Atack.pos.y + 15,
-					Atack.pos.x + 20,
-					Atack.pos.y + Atack.size2.y,
-					0xff0000, true);
-				DrawBox(Atack.pos.x + 20,
-					Atack.pos.y + 15,
-					Atack.pos.x + 28,
-					Atack.pos.y + Atack.size2.y,
-					0x000000, true);
-				DrawBox(Atack.pos.x + 28,
-					Atack.pos.y + 15,
-					Atack.pos.x + 36,
-					Atack.pos.y + Atack.size2.y,
-					0x0000ff, true);
-				DrawBox(Atack.pos.x + 36,
-					Atack.pos.y + 4,
-					Atack.pos.x + 44,
-					Atack.pos.y + Atack.size2.y,
-					0x0000ff, true);
-				DrawBox(Atack.pos.x + 37,
-					Atack.pos.y + 15,
-					Atack.pos.x + 45,
-					Atack.pos.y + Atack.size2.y,
-					0x0000ff, true);*/
-				
-				
-				//枝振る
-				/*DrawRotaGraph2(Atack.pos.x, Atack.pos.y,
-					48,12,1.0, Atack.angle2, AtackImage2, true);
-
-				DrawBox(Atack.pos.x,
-					Atack.pos.y - 15,
-					Atack.pos.x + Atack.size2.x,
-					Atack.pos.y + Atack.size2.y+5 ,
-					0xffffff, true);*/
 			}
-			if ((Atack.moveDir == DIR_LEFT) && (Atack.type == 1))
+			if ((Atack[i].moveDir == DIR_LEFT) && (Atack[i].type == 1))
 			{
-				DrawGraph(Atack.pos.x, Atack.pos.y, AtackImage2, true);
+				DrawGraph(Atack[i].pos.x, Atack[i].pos.y, AtackImage2, true);
 
-	/*			DrawBox(Atack.pos.x +44,
-					Atack.pos.y + 15,
-					Atack.pos.x + 52,
-					Atack.pos.y + Atack.size2.y,
-					0xff00ff, true);
-
-			DrawBox(Atack.pos.x + 36,
-					Atack.pos.y + 15,
-					Atack.pos.x + 44,
-					Atack.pos.y + Atack.size2.y,
-					0xff0000, true);
-
-	
-				DrawBox(Atack.pos.x + 28,
-					Atack.pos.y + 15,
-					Atack.pos.x + 36,
-					Atack.pos.y + Atack.size2.y,
-					0x000000, true);
-				DrawBox(Atack.pos.x + 20,
-					Atack.pos.y + 15,
-					Atack.pos.x + 28,
-					Atack.pos.y + Atack.size2.y,
-					0x0000ff, true);
-
-
-				DrawBox(Atack.pos.x + 12,
-					Atack.pos.y + 15,
-					Atack.pos.x + 20,
-					Atack.pos.y + Atack.size2.y,
-					0x0000ff, true);
-
-				DrawBox(Atack.pos.x + 10,
-					Atack.pos.y + 4,
-					Atack.pos.x + 16,
-					Atack.pos.y + Atack.size2.y,
-					0xffffff, true);
-				DrawBox(Atack.pos.x + 4,
-					Atack.pos.y + 4,
-					Atack.pos.x + 10,
-					Atack.pos.y + Atack.size2.y,
-					0xffffff, true);
-
-				DrawBox(Atack.pos.x,
-					Atack.pos.y + 15,
-					Atack.pos.x + 4,
-					Atack.pos.y + Atack.size2.y,
-					0x0000ff, true);*/
-
-
-
-				//枝振る
-				//DrawRotaGraph2(Atack.pos.x, Atack.pos.y,
-				//	48,12,1.0, Atack.angle2, AtackImage2, true);
-				//DrawBox(Atack.pos.x, Atack.pos.y,
-				//	Atack.pos.x - Atack.size2.x, Atack.pos.y - Atack.size2.y ,
-				//	0xffffff, true);
 			}
 		}
 	}
-	//DrawFormatString(0, 136, 0xffffff, "Atack.angle  = %d", Atack.angle2);
-	//DrawFormatString(0, 400, 0xffffff, "Atack.Cnt  = %d", Atack.Cnt);
 
 }
 
@@ -416,10 +221,6 @@ void ExAtackInit(void)
 		ExAtack[i].defaltangle = 0;
 		ExAtack[i].type = 0;
 		ExAtack[i].moveDir = DIR_RIGHT;
-		//ExAtack.lifeMax = SHOT_LIFE_MAX;
-		//shot[i].type = HIT_SHOT;	
-		//ExAtack.offsetSize = { shot[i].size.x / 2 , shot[i].size.y / 2 };
-		//break;
 	}
 }
 
@@ -448,38 +249,17 @@ void ExAtackcontrol(void)
 			{
 				if (ExAtack[i].moveDir == DIR_RIGHT)
 				{
-					ExAtack[i].pos.x = ExAtack[i].pos.x+1;
-					if (ExAtack[i].pos.x > player[i].pos.x+48)
-					{
-						ExAtack[i].pos.x = player[i].pos.x + 48;
-					}
+					ExAtack[i].pos.x +=1;
+
 				}
 				if (ExAtack[i].moveDir == DIR_LEFT)
 				{
-					ExAtack[i].pos.x = ExAtack[i].pos.x - 1;
-					if (ExAtack[i].pos.x <= player[i].pos.x - 96)
-					{
-						ExAtack[i].pos.x = player[i].pos.x - 96;
-					}
+					ExAtack[i].pos.x -=1;
+
 				}
 				
 				
 			}
-			//ハンマー振る版
-			/*if (rotawait2 > 50)
-			{
-				switch (ExAtack[i].moveDir)
-				{
-				case DIR_LEFT:
-					ExAtack[i].angle -= DX_PI_F / 30;
-					break;
-				case DIR_RIGHT:
-					ExAtack[i].angle += DX_PI_F / 30;
-					break;
-				default:
-					break;
-				}
-			}*/
 			if (ExAtack[i].type == 1)
 			{
 
@@ -500,22 +280,6 @@ void ExAtackcontrol(void)
 			}
 			if (ExAtack[i].type == 2)
 			{
-				/*if (ExAtack[i].moveDir == DIR_RIGHT)
-				{
-					ExAtack[i].pos.x = ExAtack[i].pos.x + 1;
-					if (ExAtack[i].pos.x > player[i].pos.x + 48)
-					{
-						ExAtack[i].pos.x = player[i].pos.x + 48;
-					}
-				}
-				if (ExAtack[i].moveDir == DIR_LEFT)
-				{
-					ExAtack[i].pos.x = ExAtack[i].pos.x - 1;
-					if (ExAtack[i].pos.x <= player[i].pos.x - 96)
-					{
-						ExAtack[i].pos.x = player[i].pos.x - 96;
-					}
-				}*/
 				switch (ExAtack[i].moveDir)
 				{
 				case DIR_LEFT:
@@ -583,20 +347,6 @@ void ExAtackStartup(XY pPos, MOVE_DIR pDir, int type)
 			}
 
 
-
-			//ハンマー振る版
-		/*	if (ExAtack[i].type == 1)
-			{
-				if (pDir == DIR_RIGHT)
-				{
-					ExAtack[i].pos = { pPos.x + 70,pPos.y + 10 };
-				}
-				if (pDir == DIR_LEFT)
-				{
-					ExAtack[i].pos = { pPos.x - 7,pPos.y + 10 };
-				}
-			}*/
-
 			if (ExAtack[i].type == 1)
 			{
 				if (pDir == DIR_RIGHT)
@@ -619,9 +369,7 @@ void ExAtackStartup(XY pPos, MOVE_DIR pDir, int type)
 			{
 				ExAtack[i].pos = { pPos.x,pPos.y+36 };
 				ExAtack[i].movespeed = 10;
-				//PlaySoundMem(FireSound, DX_PLAYTYPE_BACK);
 			}
-			//ExAtack.movespeed = 5;
 
 			ExAtack[i].flag = true;
 			break;
@@ -641,7 +389,6 @@ void ExAtackDraw(void)
 
 		if (ExAtack[i].flag == true)
 		{
-			//DrawGraph(ExAtack.pos.x, ExAtack.pos.y, ExAtackImage, true);
 			if (ExAtack[i].moveDir == DIR_RIGHT)
 			{
 				Exx = -30;
@@ -654,255 +401,22 @@ void ExAtackDraw(void)
 			{
 				DrawGraph(ExAtack[i].pos.x, ExAtack[i].pos.y, ExAtackImage, true);
 
-				/*	DrawBox(ExAtack[i].pos.x,
-						ExAtack[i].pos.y,
-						ExAtack[i].pos.x + 10,
-						ExAtack[i].pos.y + ExAtack[i].size.y,
-						0xff00ff, false);
-
-					DrawBox(ExAtack[i].pos.x + 10,
-						ExAtack[i].pos.y + 2,
-						ExAtack[i].pos.x + 20,
-						ExAtack[i].pos.y + 47,
-						0x00ffff, false);
-
-					DrawBox(ExAtack[i].pos.x + 20,
-						ExAtack[i].pos.y + 5,
-						ExAtack[i].pos.x + 30,
-						ExAtack[i].pos.y + 45,
-						0xff00ff, false);
-					DrawBox(ExAtack[i].pos.x + 30,
-						ExAtack[i].pos.y + 8,
-						ExAtack[i].pos.x + 40,
-						ExAtack[i].pos.y + 43,
-						0xff00ff, false);
-					DrawBox(ExAtack[i].pos.x + 40,
-						ExAtack[i].pos.y + 11,
-						ExAtack[i].pos.x + 50,
-						ExAtack[i].pos.y + 39,
-						0xff00ff, false);
-					DrawBox(ExAtack[i].pos.x + 50,
-						ExAtack[i].pos.y + 14,
-						ExAtack[i].pos.x + 60,
-						ExAtack[i].pos.y + 36,
-						0xff00ff, false);
-					DrawBox(ExAtack[i].pos.x + 60,
-						ExAtack[i].pos.y + 17,
-						ExAtack[i].pos.x + 70,
-						ExAtack[i].pos.y + 33,
-						0xff00ff, false);
-					DrawBox(ExAtack[i].pos.x + 70,
-						ExAtack[i].pos.y + 20,
-						ExAtack[i].pos.x + 80,
-						ExAtack[i].pos.y + 30,
-						0xff00ff, false);
-					DrawBox(ExAtack[i].pos.x + 80,
-						ExAtack[i].pos.y + 23,
-						ExAtack[i].pos.x + 90,
-						ExAtack[i].pos.y + 27,
-						0xff00ff, false);*/
 			}
 			if ((ExAtack[i].moveDir == DIR_LEFT) && (ExAtack[i].type == 0))
 			{
 				DrawTurnGraph(ExAtack[i].pos.x/*-48*/, ExAtack[i].pos.y, ExAtackImage, true);
 
-				/*	DrawBox(ExAtack[i].pos.x + 5,
-						ExAtack[i].pos.y + 24,
-						ExAtack[i].pos.x + 10,
-						ExAtack[i].pos.y + 26,
-						0x000000, true);
-
-					DrawBox(ExAtack[i].pos.x + 10,
-						ExAtack[i].pos.y + 23,
-						ExAtack[i].pos.x + 20,
-						ExAtack[i].pos.y + 27,
-						0xffffff, false);
-					DrawBox(ExAtack[i].pos.x + 20,
-						ExAtack[i].pos.y + 20,
-						ExAtack[i].pos.x + 30,
-						ExAtack[i].pos.y + 30,
-						0xff00ff, false);
-					DrawBox(ExAtack[i].pos.x + 30,
-						ExAtack[i].pos.y + 17,
-						ExAtack[i].pos.x + 40,
-						ExAtack[i].pos.y + 33,
-						0xff00ff, false);
-
-					DrawBox(ExAtack[i].pos.x + 40,
-						ExAtack[i].pos.y + 14,
-						ExAtack[i].pos.x + 50,
-						ExAtack[i].pos.y + 36,
-						0xff00ff, false);
-					DrawBox(ExAtack[i].pos.x + 50,
-						ExAtack[i].pos.y + 11,
-						ExAtack[i].pos.x + 60,
-						ExAtack[i].pos.y + 39,
-						0xff00ff, false);
-
-					DrawBox(ExAtack[i].pos.x + 60,
-						ExAtack[i].pos.y + 8,
-						ExAtack[i].pos.x + 70,
-						ExAtack[i].pos.y + 43,
-						0xff00ff, false);
-					DrawBox(ExAtack[i].pos.x + 70,
-						ExAtack[i].pos.y + 5,
-						ExAtack[i].pos.x + 80,
-						ExAtack[i].pos.y + 45,
-						0xff00ff, false);
-					DrawBox(ExAtack[i].pos.x + 80,
-						ExAtack[i].pos.y + 2,
-						ExAtack[i].pos.x + 95,
-						ExAtack[i].pos.y + 47,
-						0xff00ff, false);*/
 			}
 
 			if (ExAtack[i].type == 1)
 			{
 
-				//ハンマー振る版
-				//DrawRotaGraph(ExAtack.pos.x+ Exx, ExAtack.pos.y-30, 2.0, ExAtack.angle, ExAtackImage, true);
-				//DrawRotaGraph2(
-				//	ExAtack[i].pos.x + Exx, ExAtack[i].pos.y - 30,
-				//	24, 69,
-				//	2.0, ExAtack[i].angle, ExAtack1Image, true);
-				/*if (ExAtack[i].moveDir == DIR_LEFT)
-				{*/
 				DrawRotaGraph(
 					ExAtack[i].pos.x/* + Exx*/, ExAtack[i].pos.y/* - 30*/,
 					2.0, 91.11, ExAtack1Image, true);
-				/*}*/
-				/*if (ExAtack[i].moveDir == DIR_RIGHT)
-				{
-					DrawRotaGraph(
-						ExAtack[i].pos.x + Exx, ExAtack[i].pos.y - 30,
-						2.0, 91.11, ExAtack1Image, true);
-				}*/
 
 
-				if (ExAtack[i].moveDir == DIR_RIGHT)
-				{
-
-
-
-					//DrawBox(ExAtack[i].pos.x + 24, ExAtack[i].pos.y + 5/* + 34.5*/,
-					//		ExAtack[i].pos.x + 45, ExAtack[i].pos.y + 21, 0xffffff, false);
-
-					//DrawBox(ExAtack[i].pos.x + 24, ExAtack[i].pos.y + 21/* + 34.5*/,
-					//		ExAtack[i].pos.x + 45, ExAtack[i].pos.y + 37, 0xffffff, false);
-
-					//DrawBox(ExAtack[i].pos.x + 24, ExAtack[i].pos.y + 37/* + 34.5*/,
-					//		ExAtack[i].pos.x + 45, ExAtack[i].pos.y + 53, 0xffffff, false);
-
-					//DrawBox(ExAtack[i].pos.x + 24, ExAtack[i].pos.y + 53/* + 34.5*/,
-					//		ExAtack[i].pos.x + 45, ExAtack[i].pos.y + 69, 0xffffff, false);
-
-
-
-					//DrawBox(ExAtack[i].pos.x + 3, ExAtack[i].pos.y + 5/* + 34.5*/,
-					//		ExAtack[i].pos.x + 24, ExAtack[i].pos.y + 21, 0xffffff, false);
-
-					//DrawBox(ExAtack[i].pos.x + 3, ExAtack[i].pos.y + 21/* + 34.5*/,
-					//		ExAtack[i].pos.x + 24, ExAtack[i].pos.y + 37, 0xffffff, false);
-
-					//DrawBox(ExAtack[i].pos.x + 3, ExAtack[i].pos.y + 37/* + 34.5*/,
-					//		ExAtack[i].pos.x + 24, ExAtack[i].pos.y + 53, 0xffffff, false);
-
-					//DrawBox(ExAtack[i].pos.x + 3, ExAtack[i].pos.y + 53/* + 34.5*/,
-					//		ExAtack[i].pos.x + 24, ExAtack[i].pos.y + 69, 0xffffff, false);
-
-
-					//DrawBox(ExAtack[i].pos.x - 18, ExAtack[i].pos.y + 5/* + 34.5*/,
-					//		ExAtack[i].pos.x + 3, ExAtack[i].pos.y + 21, 0xffffff, false);
-
-					//DrawBox(ExAtack[i].pos.x - 18, ExAtack[i].pos.y + 21/* + 34.5*/,
-					//		ExAtack[i].pos.x + 3, ExAtack[i].pos.y + 37, 0xffffff, false);
-
-					//DrawBox(ExAtack[i].pos.x - 18, ExAtack[i].pos.y + 37/* + 34.5*/,
-					//		ExAtack[i].pos.x + 3, ExAtack[i].pos.y + 53, 0xffffff, false);
-
-					//DrawBox(ExAtack[i].pos.x - 18, ExAtack[i].pos.y + 53/* + 34.5*/,
-					//		ExAtack[i].pos.x + 3, ExAtack[i].pos.y + 69, 0xffffff, false);
-
-
-					//DrawBox(ExAtack[i].pos.x - 43, ExAtack[i].pos.y + 5/* + 34.5*/,
-					//		ExAtack[i].pos.x - 18, ExAtack[i].pos.y + 21, 0xffffff, false);
-
-					//DrawBox(ExAtack[i].pos.x - 43, ExAtack[i].pos.y + 21/* + 34.5*/,
-					//		ExAtack[i].pos.x - 18, ExAtack[i].pos.y + 37, 0xffffff, false);
-
-					//DrawBox(ExAtack[i].pos.x - 43, ExAtack[i].pos.y + 37/* + 34.5*/,
-					//		ExAtack[i].pos.x - 18, ExAtack[i].pos.y + 53, 0xffffff, false);
-
-					//DrawBox(ExAtack[i].pos.x - 43, ExAtack[i].pos.y + 53/* + 34.5*/,
-					//		ExAtack[i].pos.x - 18, ExAtack[i].pos.y + 69, 0xffffff, false);
-
-					//
-
-					/*ハンマー振る版
-					DrawBox(ExAtack[i].pos.x + 8,
-						ExAtack[i].pos.y - 69,
-						ExAtack[i].pos.x + 48 * 2,
-						ExAtack[i].pos.y, 0xffffff, true);
-					DrawBox(ExAtack.pos.x + 28,
-						ExAtack.pos.y - 69,
-						ExAtack.pos.x + 48 * 2,
-						ExAtack.pos.y + 69, 0x00ffff, true);*/
-				}
-				if (ExAtack[i].moveDir == DIR_LEFT)
-				{
-					//DrawBox(ExAtack[i].pos.x - 44, ExAtack[i].pos.y + 5/* + 34.5*/,
-					//	ExAtack[i].pos.x + 44, ExAtack[i].pos.y + 69, 0xffffff, false);
-
-					//DrawBox(ExAtack[i].pos.x + 24, ExAtack[i].pos.y + 5/* + 34.5*/,
-					//	ExAtack[i].pos.x + 45, ExAtack[i].pos.y + 21, 0xffffff, false);
-					//DrawBox(ExAtack[i].pos.x + 24, ExAtack[i].pos.y + 21/* + 34.5*/,
-					//	ExAtack[i].pos.x + 45, ExAtack[i].pos.y + 37, 0xffffff, false);
-					//DrawBox(ExAtack[i].pos.x + 24, ExAtack[i].pos.y + 37/* + 34.5*/,
-					//	ExAtack[i].pos.x + 45, ExAtack[i].pos.y + 53, 0xffffff, false);
-					//DrawBox(ExAtack[i].pos.x + 24, ExAtack[i].pos.y + 53/* + 34.5*/,
-					//	ExAtack[i].pos.x + 45, ExAtack[i].pos.y + 69, 0xffffff, false);
-
-					//
-					//DrawBox(ExAtack[i].pos.x + 3, ExAtack[i].pos.y + 5/* + 34.5*/,
-					//	ExAtack[i].pos.x + 24, ExAtack[i].pos.y + 21, 0xffffff, false);
-					//DrawBox(ExAtack[i].pos.x + 3, ExAtack[i].pos.y + 21/* + 34.5*/,
-					//	ExAtack[i].pos.x + 24, ExAtack[i].pos.y + 37, 0xffffff, false);
-					//DrawBox(ExAtack[i].pos.x + 3, ExAtack[i].pos.y + 37/* + 34.5*/,
-					//	ExAtack[i].pos.x + 24, ExAtack[i].pos.y + 53, 0xffffff, false);
-					//DrawBox(ExAtack[i].pos.x + 3, ExAtack[i].pos.y + 53/* + 34.5*/,
-					//	ExAtack[i].pos.x + 24, ExAtack[i].pos.y + 69, 0xffffff, false);
-
-					//DrawBox(ExAtack[i].pos.x - 18, ExAtack[i].pos.y + 5/* + 34.5*/,
-					//	ExAtack[i].pos.x + 3, ExAtack[i].pos.y + 21, 0xffffff, false);
-					//DrawBox(ExAtack[i].pos.x - 18, ExAtack[i].pos.y + 21/* + 34.5*/,
-					//	ExAtack[i].pos.x + 3, ExAtack[i].pos.y + 37, 0xffffff, false);
-					//DrawBox(ExAtack[i].pos.x - 18, ExAtack[i].pos.y + 37/* + 34.5*/,
-					//	ExAtack[i].pos.x + 3, ExAtack[i].pos.y + 53, 0xffffff, false);
-					//DrawBox(ExAtack[i].pos.x - 18, ExAtack[i].pos.y + 53/* + 34.5*/,
-					//	ExAtack[i].pos.x + 3, ExAtack[i].pos.y + 69, 0xffffff, false);
-
-					//DrawBox(ExAtack[i].pos.x - 43, ExAtack[i].pos.y + 5/* + 34.5*/,
-					//	ExAtack[i].pos.x - 18, ExAtack[i].pos.y + 21, 0xffffff, false);
-					//DrawBox(ExAtack[i].pos.x - 43, ExAtack[i].pos.y + 21/* + 34.5*/,
-					//	ExAtack[i].pos.x - 18, ExAtack[i].pos.y + 37, 0xffffff, false);
-					//DrawBox(ExAtack[i].pos.x - 43, ExAtack[i].pos.y + 37/* + 34.5*/,
-					//	ExAtack[i].pos.x - 18, ExAtack[i].pos.y + 53, 0xffffff, false);
-					//DrawBox(ExAtack[i].pos.x - 43, ExAtack[i].pos.y + 53/* + 34.5*/,
-					//	ExAtack[i].pos.x - 18, ExAtack[i].pos.y + 69, 0xffffff, false);
-
-					/*ハンマー振る版
-					DrawBox(ExAtack[i].pos.x - 8,
-						ExAtack[i].pos.y,
-						ExAtack[i].pos.x - 48 * 2,
-						ExAtack[i].pos.y - 69, 0xffffff, true);
-
-					DrawBox(ExAtack[i].pos.x - 28,
-						ExAtack[i].pos.y + 69,
-						ExAtack[i].pos.x - 48 * 2,
-						ExAtack[i].pos.y - 69, 0x00ffff, true);*/
-				}
 			}
-			//DrawCircle(ExAtack[i].pos.x, ExAtack[i].pos.y+65, 5, 0xffffff, true);
 			if (ExAtack[i].type == 2)
 			{
 				if (ExAtack[i].flag == true)

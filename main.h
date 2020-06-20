@@ -20,6 +20,8 @@ enum GameMode {
 	MODE_INIT,
 	MODE_TITLE,
 	MODE_SELECT,
+	MODE_HOWTO,
+
 	MODE_GAME,
 	MODE_END,
 	MODE_MAX
@@ -43,6 +45,7 @@ enum {
 	PLAYER_KEY_CONFIG_MAX,
 };
 
+
 typedef struct
 {
 	XY pos;
@@ -58,11 +61,14 @@ typedef struct
 	XY_F velocity;		// 移動速度
 	bool flag;
 	bool AupFlag;		//アイテムによる攻撃力アップフラグ
+	bool AtackFlag;		//近距離攻撃フラグ
+	bool boost;			//近距離攻撃被撃による無敵時間発生フラグ
 	int Life;				//体力
 	int LifeLimit;			//体力上限
 	int Ex;					//必殺ゲージ
 	int ExLimit;			//必殺ゲージ上限
 	int WinCnt;				//勝利数
+	int invisible;
 	//int Damage;
 	int keyConfig[PLAYER_KEY_CONFIG_MAX];
 	int keyPressed[PLAYER_KEY_CONFIG_MAX];		//今押されているキー
@@ -82,6 +88,9 @@ void TitleDraw(void);
 
 void Select(void);
 void SelectDraw(void);
+
+void HowTo(void);
+void HowToDraw(void);
 
 
 void Game(void);

@@ -4,7 +4,6 @@
 #include "player.h"
 #include "keycheck.h"
 #include "Shot.h"
-//#include "effect.h"
 
 #define SHOT_LIFE_MAX  33
 
@@ -99,7 +98,6 @@ void ShotDraw(void)
 				shot[i].pos.y - shot[i].offsetSize.y,
 				shotimage2, true);
 		}
-		//DrawCircle(shot[i].pos.x, shot[i].pos.y, 2, 0xff0000, true);
 	}
 	
 }

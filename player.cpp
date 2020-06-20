@@ -22,10 +22,12 @@ int ExHitSound;
 int Aupimage;
 int GetSound;
 int ExpSound;
+
 int jumpCnt[PLAYER_MAX];
 int jumpFrame[PLAYER_MAX];
 int exCnt = 0;
 int AupCnt = 300;
+int boostCnt;
 int WaitCnt;
 XY movedpos;
 
@@ -36,10 +38,12 @@ void playerInit(void)
 	WaitCnt = 0;
 	for (int i = 0; i < PLAYER_MAX; i++)
 	{
+
 		player[i].pos = { 48,SCREEN_SIZE_Y-96 };
 		player[i].defaltpos = player[i].pos;
 		
 		player[i].velocity = { 0,0 };
+
 		player[i].moveDir = DIR_RIGHT;
 		player[i].hitPosS = { 0,  0 };									// 鶏の左上
 		player[i].hitPosE = { 48,  40 };									// の右下
@@ -57,11 +61,11 @@ void playerInit(void)
 		player[1].Life = 400;
 		player[1].LifeLimit = 400;
 
-		player[2].Life = 200;
-		player[2].LifeLimit = 200;
+		player[2].Life = 250;
+		player[2].LifeLimit = 250;
 		player[3].Life = 300;
 		player[3].LifeLimit = 300;
-		//player[i].Damage = 10;
+
 
 		player[i].WinCnt = 0;
 
@@ -80,13 +84,15 @@ void playerInit(void)
 			player[i].keyConfig[PLAYER_KEY_CONFIG_LEFT] = KEY_INPUT_LEFT;
 			player[i].keyConfig[PLAYER_KEY_CONFIG_RIGHT] = KEY_INPUT_RIGHT;
 			player[i].keyConfig[PLAYER_KEY_CONFIG_FIRE] = KEY_INPUT_NUMPAD0;
-			player[i].keyConfig[PLAYER_KEY_CONFIG_ATACK] = KEY_INPUT_RSHIFT;
+			player[i].keyConfig[PLAYER_KEY_CONFIG_ATACK] = KEY_INPUT_NUMPADENTER;
 			player[i].keyConfig[PLAYER_KEY_CONFIG_EXATACK] = KEY_INPUT_NUMPAD5;
 		}
 
 		
 
-
+		player[i].boost = false;
+		player[i].AtackFlag = false;
+		player[i].invisible = 0;
 		player[i].Ex = 0;
 		player[i].ExLimit = 100;
 		
@@ -111,6 +117,8 @@ void playerInit(void)
 	ExpSound = LoadSoundMem("Sound/爆弾.mp3", true);
 	ExHitSound = LoadSoundMem("Sound/必殺技効果音.mp3");
 
+
+	boostCnt = 100;
 }
 
 
@@ -151,15 +159,11 @@ void playerUpdate(void)
 
 
 
-		if (player[i].Life > player[i].LifeLimit)
-		{
-			player[i].Life = player[i].LifeLimit;
-		}
 		if (player[i].Ex > player[i].ExLimit)
 		{
 			player[i].Ex = player[i].ExLimit;
 		}
-		
+
 		// ﾌﾟﾚｲﾔｰの移動	(キー操作)
 		if (player[i].flag)
 		{
@@ -172,7 +176,7 @@ void playerUpdate(void)
 					if (player[i].velocity.x > VELOCITY_X_MAX) {
 						player[i].velocity.x = VELOCITY_X_MAX;
 					}
-					
+
 				}
 
 				if (player[i].moveDir == DIR_LEFT) {								// 左			
@@ -216,6 +220,7 @@ void playerUpdate(void)
 			movedOffset3 = movedOffset;
 			movedOffset3.y = movedPos.y + player[i].hitPosE.y - 1;			// ‐1は調整
 
+			//SetOffset(OFFSET_LEFT_RIGHT);
 
 			if (IsPass(movedOffset) && IsPass(movedOffset2) && IsPass(movedOffset3)) {		// movedOffsetはﾌﾟﾚｲﾔｰの中心movedOffset2はﾌﾟﾚｲﾔｰの頭上の中心movedOffset3はﾌﾟﾚｲﾔｰの足下の中心
 				player[i].pos = movedPos;													// 
@@ -254,12 +259,10 @@ void playerUpdate(void)
 				player[i].pos = movedPos;
 			}
 			else {
-			/*	player[i].headFlag = true;*/
-				//tmpPos = mapPosToMoveIndex(movedOffset, player[i].headFlag, player[i].velocity);
 				tmpindex = mapPosToIndex(movedOffset);
 				tmpindex.y++;
 				tmpPos = mapIndexToPos(tmpindex);
-				
+
 				player[i].pos.y = tmpPos.y + player[i].hitPosS.y;
 				player[i].velocity.y *= -1;
 			}
@@ -340,18 +343,21 @@ void playerUpdate(void)
 			movedOffset3 = movedOffset;							// 右上
 			movedOffset3.x = movedPos.x + player[i].hitPosE.x - 1;
 			//SetOffset(OFFSET_NOTJUMP);
-			if (IsPass(movedOffset) && IsPass(movedOffset2) && IsPass(movedOffset3)) 
+			if (IsPass(movedOffset) && IsPass(movedOffset2) && IsPass(movedOffset3))
 			{
 				movedOffset.y = movedPos.y + player[i].hitPosE.y;		// 足元
+				/*if (!JumpIsPass(movedOffset)) {
+					player[i].velocity.y = 80;
+				}*/
 			}
 			movedPos = player[i].pos;
 
-			
+
 		}
 
 		if (PlayerShotKeyCheck(i))
 		{
-			
+
 			if (player[i].flag == true)
 			{
 				XY Shotpos = player[i].pos;
@@ -361,14 +367,14 @@ void playerUpdate(void)
 				}
 				if (player[i].moveDir == DIR_RIGHT)
 				{
-					
-					if  (i % 2 == 1)
+
+					if (i % 2 == 1)
 					{
 						hposy = 40;
 					}
-				
+
 					BulletFire({ Shotpos.x + player[i].offsetSize.x + 50,
-						Shotpos.y + hposy +25},
+						Shotpos.y + hposy + 25 },
 						player[i].moveDir, i);
 
 				}
@@ -378,7 +384,7 @@ void playerUpdate(void)
 					{
 						hposy = 40;
 					}
-					BulletFire({ Shotpos.x - player[i].offsetSize.x - 20, 
+					BulletFire({ Shotpos.x - player[i].offsetSize.x - 20,
 						Shotpos.y + hposy + 25 },
 						player[i].moveDir, i);
 
@@ -386,12 +392,13 @@ void playerUpdate(void)
 			}
 
 		}
-
+		
 		if (PlayerAtackKeyCheck(i))
 		{
 			if (player[i].flag == true)
 			{
-				
+				if (!player[i].AtackFlag)
+				{
 					if (i % 2 == 1)
 					{
 						hposy = 40;
@@ -400,14 +407,17 @@ void playerUpdate(void)
 						player[i].pos.x,
 						player[i].pos.y + hposy },
 						player[i].moveDir, i);
-				
+
+					player[i].AtackFlag = true;
+				}
 			}
 		}
 		
 
+
 		//	SetOffset(OFFSET_FOOT);
 
-		
+
 		movedOffset = movedPos;
 		movedOffset.y = movedPos.y + player[i].hitPosE.y;
 		movedOffset.y = movedPos.y + player[i].hitPosE.y;
@@ -418,7 +428,7 @@ void playerUpdate(void)
 
 		if (PlayerExAtackKeyCheck(i))
 		{
-			if (!IsPass(movedOffset) && !IsPass(movedOffset2) && !IsPass(movedOffset3)) 
+			if (!IsPass(movedOffset) && !IsPass(movedOffset2) && !IsPass(movedOffset3))
 			{
 				if ((player[i].flag == true) && (player[i].Ex == 100))
 				{
@@ -431,22 +441,27 @@ void playerUpdate(void)
 				}
 			}
 		}
-		
+
 		for (int j = 0; j < SHOT_MAX; j++)
 		{
-			if (PlayerShotHitCheck(shot[j].pos, shot[j].flag, shot[j].moveDir,i))//shot当たり判定
+			if (PlayerShotHitCheck(shot[j].pos, shot[j].flag, shot[j].moveDir, i))//shot当たり判定
 			{
 				shot[j].flag = false;
 				//break;
 			}
 		}
 
-		
-		if (PlayerAtackHitCheck(Atack.pos, Atack.size, Atack.type, Atack.flag,Atack.moveDir))
+		for (int j = 0; j < ATACK_MAX; j++)
 		{
-			Atack.flag = false;
+			if (PlayerAtackHitCheck(Atack[j].pos, Atack[j].size, Atack[j].type, Atack[j].flag, Atack[j].moveDir))
+			{
+				Atack[j].flag = false;
 
-			DrawFormatString(0, 200, 0xffffff, "Hit");
+				//player[i].Life  = player[i].Life -10;
+				//break;
+
+				DrawFormatString(0, 200, 0xffffff, "Hit");
+			}
 		}
 		for (int i = 0; i < EXATACK_MAX; i++)
 		{
@@ -548,26 +563,29 @@ void playerUpdate(void)
 
 				}
 			}
-			
+
 			WaitTimer(1000);
+			SoundChange();
 			PlayerReset();
 
 		}
 		if (player[i].WinCnt == 2)
 		{
+			StopMusic();
+
 			for (int j = 0; j < PLAYER_MAX; j++)
 			{
 				player[j].flag = false;
 			}
-			
+
+			CNT2 = 0;
 			WaitCnt++;
-			//WaitTimer(1000);
-			if(WaitCnt > 100)
-			GMODE = MODE_INIT;
-			////PlayerReset();
-
+			////WaitTimer(1000);
+			if (WaitCnt > 150)
+			{
+				GMODE = MODE_INIT;
+			}
 		}
-
 
 		if (player[i].AupFlag)
 		{
@@ -579,7 +597,17 @@ void playerUpdate(void)
 				AupCnt = 300;
 			}
 		}
-	
+		if (player[i].boost)
+		{
+			boostCnt--;
+			player[i].invisible++;
+		}
+		if (boostCnt < 0)
+		{
+			player[i].boost = false;
+			boostCnt = 100;
+			player[i].invisible = 0;
+		}
 	}
 }
 
@@ -595,24 +623,32 @@ void playerDraw(void)
 			if (i % 2 == 0)
 			{
 				if (player[i].moveDir == DIR_RIGHT)
-					DrawGraph(player[i].pos.x, player[i].pos.y, playerimage[i][player[i].animCnt / 10 % 4], true);
-
-				if (player[i].moveDir == DIR_LEFT)
-					DrawTurnGraph(player[i].pos.x, player[i].pos.y, playerimage[i][player[i].animCnt / 10 % 4], true);
+					if (((player[i].invisible / 10) % 2) == 0)
+					{
+						DrawGraph(player[i].pos.x, player[i].pos.y, playerimage[i][player[i].animCnt / 10 % 4], true);
+					}
+				if (((player[i].invisible / 10) % 2) == 0)
+				{
+					if (player[i].moveDir == DIR_LEFT)
+						DrawTurnGraph(player[i].pos.x, player[i].pos.y, playerimage[i][player[i].animCnt / 10 % 4], true);
+				}
 			}
 			if (i % 2 == 1)
 			{
 				if (player[i].moveDir == DIR_RIGHT)
-					DrawTurnGraph(player[i].pos.x, player[i].pos.y, playerimage[i][player[i].animCnt / 10 % 4], true);
-
+					if (((player[i].invisible / 10) % 2) == 0)
+					{
+						DrawTurnGraph(player[i].pos.x, player[i].pos.y, playerimage[i][player[i].animCnt / 10 % 4], true);
+					}
 				if (player[i].moveDir == DIR_LEFT)
-				
-				DrawGraph(player[i].pos.x, player[i].pos.y, playerimage[i][player[i].animCnt / 10 % 4], true);
+					if (((player[i].invisible / 10) % 2) == 0)
+					{
+						DrawGraph(player[i].pos.x, player[i].pos.y, playerimage[i][player[i].animCnt / 10 % 4], true);
+					}
 			}
 			
 		}
 	}
-
 	//ステータス描画(ニワトリ)
 	if (player[0].flag)
 	{
@@ -756,12 +792,11 @@ void playerDraw(void)
 			DrawBox(SCREEN_SIZE_X, 17,
 				960 - i, 22, 0x0000ff, true);
 		}
-
+		
 	}
 
 
 
-		//DrawBox(100, 100, 148, 112, 0xffffff, true);
 		for (int i = 0; i < player[0].WinCnt;i++)
 		{
 			DrawGraph(300 - (i * 48), 20, p1Winimage, true);
@@ -840,6 +875,7 @@ void playerDraw(void)
 		 {
 			 DrawGraph(SCREEN_SIZE_X - 164, 17, p4Nameimage, true);
 		 }
+		
 }
 
 
@@ -1010,13 +1046,25 @@ bool PlayerShotHitCheck(XY pos,bool flag, /*XY size,*/ MOVE_DIR Sdir,int j)
 			{
 				player[0].Life = player[0].Life - 20;
 				player[0].Ex = player[0].Ex + 20;
+				if (player[0].Ex > player[0].ExLimit)
+				{
+					player[0].Ex = player[0].ExLimit;
+				}
 				if (player[1].flag)
 				{
 					player[1].Ex = player[1].Ex + 10;
+					if (player[1].Ex > player[1].ExLimit)
+					{
+						player[1].Ex = player[1].ExLimit;
+					}
 				}
 				if (player[3].flag)
 				{
 					player[3].Ex = player[3].Ex + 10;
+					if (player[3].Ex > player[3].ExLimit)
+					{
+						player[3].Ex = player[3].ExLimit;
+					}
 				}
 
 			}
@@ -1024,13 +1072,25 @@ bool PlayerShotHitCheck(XY pos,bool flag, /*XY size,*/ MOVE_DIR Sdir,int j)
 			{
 				player[0].Life = player[0].Life - 10;
 				player[0].Ex = player[0].Ex + 10;
+				if (player[0].Ex > player[0].ExLimit)
+				{
+					player[0].Ex = player[0].ExLimit;
+				}
 				if (player[1].flag)
 				{
 					player[1].Ex = player[1].Ex + 10;
+					if (player[1].Ex > player[1].ExLimit)
+					{
+						player[1].Ex = player[1].ExLimit;
+					}
 				}
 				if (player[3].flag)
 				{
 					player[3].Ex = player[3].Ex + 10;
+					if (player[3].Ex > player[3].ExLimit)
+					{
+						player[3].Ex = player[3].ExLimit;
+					}
 				}
 			}
 			PlaySoundMem(HitSound, DX_PLAYTYPE_BACK);
@@ -1049,13 +1109,25 @@ bool PlayerShotHitCheck(XY pos,bool flag, /*XY size,*/ MOVE_DIR Sdir,int j)
 			{
 				player[1].Life = player[1].Life - 20;
 				player[1].Ex = player[1].Ex + 20;
+				if (player[1].Ex > player[1].ExLimit)
+				{
+					player[1].Ex = player[1].ExLimit;
+				}
 				if (player[0].flag)
 				{
 					player[0].Ex = player[0].Ex + 10;
+					if (player[0].Ex > player[0].ExLimit)
+					{
+						player[0].Ex = player[0].ExLimit;
+					}
 				}
 				if (player[2].flag)
 				{
 					player[2].Ex = player[2].Ex + 10;
+					if (player[2].Ex > player[2].ExLimit)
+					{
+						player[2].Ex = player[2].ExLimit;
+					}
 				}
 
 			}
@@ -1063,13 +1135,25 @@ bool PlayerShotHitCheck(XY pos,bool flag, /*XY size,*/ MOVE_DIR Sdir,int j)
 			{
 				player[1].Life = player[1].Life - 10;
 				player[1].Ex = player[1].Ex + 10;
+				if (player[1].Ex > player[1].ExLimit)
+				{
+					player[1].Ex = player[1].ExLimit;
+				}
 				if (player[0].flag)
 				{
 					player[0].Ex = player[0].Ex + 10;
+					if (player[0].Ex > player[0].ExLimit)
+					{
+						player[0].Ex = player[0].ExLimit;
+					}
 				}
 				if (player[2].flag)
 				{
 					player[2].Ex = player[2].Ex + 10;
+					if (player[2].Ex > player[2].ExLimit)
+					{
+						player[2].Ex = player[2].ExLimit;
+					}
 				}
 			}
 			PlaySoundMem(HitSound, DX_PLAYTYPE_BACK);
@@ -1088,13 +1172,25 @@ bool PlayerShotHitCheck(XY pos,bool flag, /*XY size,*/ MOVE_DIR Sdir,int j)
 			{
 				player[2].Life = player[2].Life - 20;
 				player[2].Ex = player[2].Ex + 20;
+				if (player[2].Ex > player[2].ExLimit)
+				{
+					player[2].Ex = player[2].ExLimit;
+				}
 				if (player[1].flag)
 				{
 					player[1].Ex = player[1].Ex + 10;
+					if (player[1].Ex > player[1].ExLimit)
+					{
+						player[1].Ex = player[1].ExLimit;
+					}
 				}
 				if (player[3].flag)
 				{
 					player[3].Ex = player[3].Ex + 10;
+					if (player[3].Ex > player[3].ExLimit)
+					{
+						player[3].Ex = player[3].ExLimit;
+					}
 				}
 
 			}
@@ -1102,17 +1198,30 @@ bool PlayerShotHitCheck(XY pos,bool flag, /*XY size,*/ MOVE_DIR Sdir,int j)
 			{
 				player[2].Life = player[2].Life - 10;
 				player[2].Ex = player[2].Ex + 10;
+				if (player[2].Ex > player[2].ExLimit)
+				{
+					player[2].Ex = player[2].ExLimit;
+				}
 				if (player[1].flag)
 				{
 					player[1].Ex = player[1].Ex + 10;
+					if (player[1].Ex > player[1].ExLimit)
+					{
+						player[1].Ex = player[1].ExLimit;
+					}
 				}
 				if (player[3].flag)
 				{
 					player[3].Ex = player[3].Ex + 10;
+					if (player[3].Ex > player[3].ExLimit)
+					{
+						player[3].Ex = player[3].ExLimit;
+					}
 				}
 			}
 			PlaySoundMem(HitSound, DX_PLAYTYPE_BACK);
 
+		
 			return true;
 		}
 	}
@@ -1127,13 +1236,25 @@ bool PlayerShotHitCheck(XY pos,bool flag, /*XY size,*/ MOVE_DIR Sdir,int j)
 			{
 				player[3].Life = player[3].Life - 20;
 				player[3].Ex = player[3].Ex + 20;
+				if (player[3].Ex > player[3].ExLimit)
+				{
+					player[3].Ex = player[3].ExLimit;
+				}
 				if (player[0].flag)
 				{
 					player[0].Ex = player[0].Ex + 10;
+					if (player[0].Ex > player[0].ExLimit)
+					{
+						player[0].Ex = player[0].ExLimit;
+					}
 				}
 				if (player[2].flag)
 				{
 					player[2].Ex = player[2].Ex + 10;
+					if (player[2].Ex > player[2].ExLimit)
+					{
+						player[2].Ex = player[2].ExLimit;
+					}
 				}
 
 			}
@@ -1141,13 +1262,25 @@ bool PlayerShotHitCheck(XY pos,bool flag, /*XY size,*/ MOVE_DIR Sdir,int j)
 			{
 				player[3].Life = player[3].Life - 10;
 				player[3].Ex = player[3].Ex + 10;
+				if (player[3].Ex > player[3].ExLimit)
+				{
+					player[3].Ex = player[3].ExLimit;
+				}
 				if (player[0].flag)
 				{
 					player[0].Ex = player[0].Ex + 10;
+					if (player[0].Ex > player[0].ExLimit)
+					{
+						player[0].Ex = player[0].ExLimit;
+					}
 				}
 				if (player[2].flag)
 				{
 					player[2].Ex = player[2].Ex + 10;
+					if (player[2].Ex > player[2].ExLimit)
+					{
+						player[2].Ex = player[2].ExLimit;
+					}
 				}
 			}
 			PlaySoundMem(HitSound, DX_PLAYTYPE_BACK);
@@ -1167,164 +1300,220 @@ bool PlayerAtackHitCheck(XY pos, XY size, int type,bool flag,MOVE_DIR Sdir)
 	int Cnt2 = 0;
 	for (int i = 0; i < PLAYER_MAX; i++)
 	{
-		if (player[i].flag) 
+		if (!player[i].boost)
 		{
-			//くちばし
-			if (((type == 0)&&(flag))&&(i % 2 ==1))
+			if (player[i].flag)
 			{
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x
-				    && (player[i].pos.y + player[i].hitPosE.y) >= pos.y
-			   	    && (player[i].pos.x + player[i].hitPosE.x) >= pos.x+5
-			        && (player[i].pos.y - player[i].hitPosS.y) <= pos.y+size.y))
+				//くちばし
+				if (((type == 0) && (flag)) && (i % 2 == 1))
 				{
+					if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x
+						&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y
+						&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 5
+						&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + size.y))
+					{
 
-					Cnt += 1;
+						Cnt += 1;
+					}
+					if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x + 5
+						&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y + 2
+						&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 10
+						&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 47))
+					{
+
+						Cnt += 1;
+					}
+					if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x + 10
+						&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y + 5
+						&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 15
+						&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 45))
+					{
+
+						Cnt += 1;
+					}
+					if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x + 15
+						&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y + 8
+						&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 20
+						&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 43))
+					{
+
+						Cnt += 1;
+					}
+					if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x + 20
+						&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y + 11
+						&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 25
+						&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 39))
+					{
+						Cnt += 1;
+					}
+					if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x + 25
+						&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y + 14
+						&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 30
+						&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 36))
+					{
+
+						Cnt += 1;
+					}
+					if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x + 30
+						&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y + 17
+						&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 35
+						&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 33))
+					{
+
+						Cnt += 1;
+					}
+					if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x + 35
+						&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y + 20
+						&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 40
+						&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 30))
+					{
+
+						Cnt += 1;
+					}
+					if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x + 40
+						&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y + 23
+						&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 45
+						&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 27))
+					{
+
+						Cnt += 1;
+					}
+
+					if (Cnt != 0)
+					{
+						player[i].boost = true;
+						player[i].Life = player[i].Life - 30;
+						player[i].Ex = player[i].Ex + 30;
+						if (player[i].Ex > player[i].ExLimit)
+						{
+							player[i].Ex = player[i].ExLimit;
+						}
+
+						if (player[0].flag)
+						{
+							player[0].Ex = player[0].Ex + 20;
+							if (player[0].Ex > player[0].ExLimit)
+							{
+								player[0].Ex = player[0].ExLimit;
+							}
+							player[0].AtackFlag = false;
+
+						}
+						if (player[2].flag)
+						{
+							player[2].Ex = player[2].Ex + 20;
+							if (player[2].Ex > player[2].ExLimit)
+							{
+								player[2].Ex = player[2].ExLimit;
+							}
+							player[2].AtackFlag = false;
+
+						}
+						PlaySoundMem(HitSound, DX_PLAYTYPE_BACK);
+
+						return true;
+
+					}
+
 				}
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x +5
-				  && (player[i].pos.y + player[i].hitPosE.y) >= pos.y +2
-				  && (player[i].pos.x + player[i].hitPosE.x) >= pos.x +10
-				  && (player[i].pos.y - player[i].hitPosS.y) <= pos.y +47))
+
+
+				//枝
+				if (((type == 1) && (flag)) && (i % 2 == 0))
 				{
+					if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x
+						&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y + 15
+						&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 12
+						&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 24))
+					{
 
-					Cnt += 1;
-				}
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x + 10
-					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y + 5
-					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 15
-					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 45))
-				{
 
-					Cnt += 1;
-				}
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x + 15
-					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y + 8
-					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 20
-					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 43))
-				{
+						Cnt2 += 1;
+					}
+					if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x + 12
+						&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y + 15
+						&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 20
+						&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 24))
+					{
 
-					Cnt += 1;
-				}
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x + 20
-					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y + 11
-					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 25
-					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 39))
-				{
-					Cnt += 1;
-				}
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x + 25
-					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y + 14
-					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 30
-					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 36))
-				{
 
-					Cnt += 1;
-				}
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x + 30
-					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y + 17
-					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 35
-					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 33))
-				{
+						Cnt2 += 1;
+					}
+					if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x + 20
+						&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y + 15
+						&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 28
+						&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 24))
+					{
 
-					Cnt += 1;
-				}
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x + 35
-					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y + 20
-					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 40
-					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 30))
-				{
 
-					Cnt += 1;
-				}
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x + 40
-					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y + 23
-					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 45
-					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 27))
-				{
+						Cnt2 += 1;
+					}
+					if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x + 28
+						&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y + 15
+						&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 36
+						&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 24))
+					{
 
-					Cnt += 1;
-				}
 
-				if (Cnt != 0)
-				{
-					player[i].Life = player[i].Life - 20;
-					player[i].Ex = player[i].Ex + 20;
-					PlaySoundMem(HitSound, DX_PLAYTYPE_BACK);
+						Cnt2 += 1;
+					}
+					if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x + 36
+						&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y + 15
+						&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 44
+						&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 24))
+					{
 
-					return true;
+						Cnt2 += 1;
+					}
+					if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x + 44
+						&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y + 15
+						&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 52
+						&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 24))
+					{
 
+						Cnt2 += 1;
+					}
+
+
+
+					if (Cnt2 != 0)
+					{
+						player[i].boost = true;
+						player[i].Life = player[i].Life - 30;
+						player[i].Ex = player[i].Ex + 30;
+						if (player[i].Ex > player[i].ExLimit)
+						{
+							player[i].Ex = player[i].ExLimit;
+						}
+
+						if (player[1].flag)
+						{
+							player[1].Ex = player[1].Ex + 20;
+							if (player[1].Ex > player[1].ExLimit)
+							{
+								player[1].Ex = player[1].ExLimit;
+							}
+							player[1].AtackFlag = false;
+
+						}
+						if (player[3].flag)
+						{
+							player[3].Ex = player[3].Ex + 20;
+							if (player[3].Ex > player[3].ExLimit)
+							{
+								player[3].Ex = player[3].ExLimit;
+							}
+							player[3].AtackFlag = false;
+
+						}
+
+						PlaySoundMem(HitSound, DX_PLAYTYPE_BACK);
+						return true;
+
+					}
 				}
 
 			}
-
-
-			//枝
-			if (((type == 1) && (flag)) && (i % 2 == 0))
-			{
-				if	 (((player[i].pos.x - player[i].hitPosS.x) <= pos.x
-					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y+15
-					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x +12
-					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 24))
-				{
-				
-
-					Cnt2 += 1;
-				}
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x+12
-					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y+15
-					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 20
-					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 24))
-				{
-
-
-					Cnt2 += 1;
-				}
-				if	 (((player[i].pos.x - player[i].hitPosS.x) <= pos.x+20
-					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y +15
-					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 28
-					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 24))
-				{
-				
-
-					Cnt2 += 1;
-				}
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x + 28
-					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y + 15
-					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 36
-					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 24))
-				{
-
-
-					Cnt2 += 1;
-				}
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x + 36
-					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y + 15
-					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 44
-					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 24))
-				{
-
-					Cnt2 += 1;
-				}
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x + 44
-					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y + 15
-					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 52
-					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 24))
-				{
-
-					Cnt2 += 1;
-				}
-
-
-
-				if (Cnt2 != 0)
-				{
-					player[i].Life = player[i].Life - 20;
-					player[i].Ex = player[i].Ex+20;
-					PlaySoundMem(HitSound, DX_PLAYTYPE_BACK);
-					return true;
-
-				}
-			}
-
 		}
 	}
 	return false;
@@ -1417,6 +1606,11 @@ bool PlayerExHitCheck(XY pos, MOVE_DIR dir, int type, bool flag)
 				{
 					player[i].Life = player[i].Life - 1;
 					player[i].Ex = player[i].Ex + 1;
+					if (player[i].Ex > player[i].ExLimit)
+					{
+						player[i].Ex = player[i].ExLimit;
+					}
+
 					return true;
 
 				}
@@ -1502,6 +1696,11 @@ bool PlayerExHitCheck(XY pos, MOVE_DIR dir, int type, bool flag)
 				{
 					player[i].Life = player[i].Life - 20;
 					player[i].Ex = player[i].Ex + 20;
+					if (player[i].Ex > player[i].ExLimit)
+					{
+						player[i].Ex = player[i].ExLimit;
+					}
+
 					return true;
 
 				}
@@ -1637,15 +1836,15 @@ bool PlayerExHitCheck(XY pos, MOVE_DIR dir, int type, bool flag)
 				}
 
 
-
-
-
-
 				if (Cnt2 != 0)
 				{
-					player[i].Life = player[i].Life - 20;
-					player[i].Ex = player[i].Ex + 20;
-
+					player[i].Life = player[i].Life - 60;
+					player[i].Ex = player[i].Ex + 60;
+					if (player[i].Ex > player[i].ExLimit)
+					{
+						player[i].Ex = player[i].ExLimit;
+					}
+				
 					PlaySoundMem(ExHitSound, DX_PLAYTYPE_BACK);
 
 					return true;
@@ -1659,8 +1858,12 @@ bool PlayerExHitCheck(XY pos, MOVE_DIR dir, int type, bool flag)
 					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y
 					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y))
 				{
-					player[i].Life = player[i].Life - 30;
-					player[i].Ex = player[i].Ex + 30;
+					player[i].Life = player[i].Life - 40;
+					player[i].Ex = player[i].Ex + 40;
+					if (player[i].Ex > player[i].ExLimit)
+					{
+						player[i].Ex = player[i].ExLimit;
+					}
 					PlaySoundMem(ExHitSound, DX_PLAYTYPE_BACK);
 
 					return true;
@@ -1727,9 +1930,14 @@ bool PlayerExHitCheck(XY pos, MOVE_DIR dir, int type, bool flag)
 
 				if (Cnt2 != 0)
 				{
-					player[i].Life = player[i].Life - 30;
-					player[i].Ex = player[i].Ex + 30;
+					player[i].Life = player[i].Life - 40;
+					player[i].Ex = player[i].Ex + 40;
+					if (player[i].Ex > player[i].ExLimit)
+					{
+						player[i].Ex = player[i].ExLimit;
+					}
 					PlaySoundMem(ExHitSound, DX_PLAYTYPE_BACK);
+
 					return true;
 
 
@@ -1753,124 +1961,39 @@ bool PlayerItemCheck(XY pos, int type)
 
 			if (type == 0) //モンエナ
 			{
-				if (((player[i].pos.x - player[i].hitPosS.x)  <= pos.x
-					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y
-					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x+24 
-					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y+24))
-				{
-					Cnt += 1;
-				}
+				//当たり判定(改善試行版...つか見る場所増やしただけ)
+
+
+				
+				//シンプル版
 				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x
 					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y
-					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x+24
-					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y+48))
-				{
-					Cnt += 1;
-				}
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x
-					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y
-					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x+48
-					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y+24))
-				{
-					Cnt += 1;
-				}
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x
-					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y
-					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x+48
-					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y+48))
-				{
-					Cnt += 1;
-				}
-				//当たり判定(改善試行版)
-				/*if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x
-					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y
-					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 12
-					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 12))
-				{
-					Cnt += 1;
-				}
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x
-					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y
-					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 12
+					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 24
 					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 24))
 				{
 					Cnt += 1;
 				}
 				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x
 					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y
-					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 12
-					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 36))
-				{
-					Cnt += 1;
-				}
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x
-					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y
-					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 12
+					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 24
 					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 48))
 				{
 					Cnt += 1;
 				}
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x
+				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x +24
 					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y
-					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 24
-					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 12))
-				{
-					Cnt += 1;
-				}
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x
-					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y
-					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 24
-					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 36))
-				{
-					Cnt += 1;
-				}
-
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x
-					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y
-					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 36
-					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 12))
-				{
-					Cnt += 1;
-				}
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x
-					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y
-					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 36
+					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 48
 					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 24))
 				{
 					Cnt += 1;
 				}
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x
-					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y
-					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 36
-					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 36))
-				{
-					Cnt += 1;
-				}
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x
-					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y
-					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 36
+				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x + 24
+					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y + 24
+					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 48
 					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 48))
 				{
 					Cnt += 1;
 				}
-
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x
-					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y
-					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 48
-					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 12))
-				{
-					Cnt += 1;
-				}
-
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x
-					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y
-					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 48
-					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 36))
-				{
-					Cnt += 1;
-				}*/
-
-
 
 
 				if (Cnt != 0)
@@ -1899,15 +2022,15 @@ bool PlayerItemCheck(XY pos, int type)
 				{
 					Cnt += 1;
 				}
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x
+				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x + 24
 					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y
 					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 48
 					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 24))
 				{
 					Cnt += 1;
 				}
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x
-					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y
+				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x + 24
+					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y + 24
 					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 48
 					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 48))
 				{
@@ -1916,7 +2039,7 @@ bool PlayerItemCheck(XY pos, int type)
 
 				if (Cnt != 0)
 				{
-					player[i].Life -= 30;
+					player[i].Life -= 40;
 					PlaySoundMem(GetSound, DX_PLAYTYPE_BACK);
 
 					return true;
@@ -1941,15 +2064,15 @@ bool PlayerItemCheck(XY pos, int type)
 				{
 					Cnt += 1;
 				}
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x
+				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x + 24
 					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y
 					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 48
 					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 24))
 				{
 					Cnt += 1;
 				}
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x
-					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y
+				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x + 24
+					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y + 24
 					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 48
 					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 48))
 				{
@@ -1958,7 +2081,11 @@ bool PlayerItemCheck(XY pos, int type)
 
 				if (Cnt != 0)
 				{
-					player[i].Life += 30;
+					player[i].Life += 40;
+					if (player[i].Life > player[i].LifeLimit)
+					{
+						player[i].Life = player[i].LifeLimit;
+					}
 					PlaySoundMem(GetSound, DX_PLAYTYPE_BACK);
 
 					return true;
@@ -1983,23 +2110,24 @@ bool PlayerItemCheck(XY pos, int type)
 				{
 					Cnt += 1;
 				}
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x
+				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x + 24
 					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y
 					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 48
 					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 24))
 				{
 					Cnt += 1;
 				}
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x
-					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y
+				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x + 24
+					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y + 24
 					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 48
 					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 48))
 				{
 					Cnt += 1;
 				}
+
 				if(Cnt != 0)
 				{
-					player[i].Life = player[i].Life - player[i].LifeLimit / 10 * 3;
+					player[i].Life = player[i].Life - player[i].LifeLimit / 10 * 2;
 					PlaySoundMem(ExpSound, DX_PLAYTYPE_BACK);
 
 					return true;
@@ -2023,15 +2151,15 @@ bool PlayerItemCheck(XY pos, int type)
 				{
 					Cnt += 1;
 				}
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x
+				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x + 24
 					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y
 					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 48
 					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 24))
 				{
 					Cnt += 1;
 				}
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x
-					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y
+				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x + 24
+					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y + 24
 					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 48
 					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 48))
 				{
@@ -2039,7 +2167,11 @@ bool PlayerItemCheck(XY pos, int type)
 				}
 				if(Cnt != 0)
 				{
-					player[i].Life += 30;
+					player[i].Life += 40;
+					if (player[i].Life > player[i].LifeLimit)
+					{
+						player[i].Life = player[i].LifeLimit;
+					}
 					PlaySoundMem(GetSound, DX_PLAYTYPE_BACK);
 
 					return true;
@@ -2061,15 +2193,15 @@ bool PlayerItemCheck(XY pos, int type)
 				{
 					Cnt += 1;
 				}
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x
+				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x + 24
 					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y
 					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 48
 					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 24))
 				{
 					Cnt += 1;
 				}
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x
-					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y
+				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x + 24
+					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y + 24
 					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 48
 					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 48))
 				{
@@ -2077,11 +2209,10 @@ bool PlayerItemCheck(XY pos, int type)
 				}
 				if(Cnt !=0)
 				{
-					player[i].Life -= 30;
+					player[i].Life -= 40;
 					PlaySoundMem(GetSound, DX_PLAYTYPE_BACK);
 
 					return true;
-
 
 				}
 
@@ -2089,29 +2220,29 @@ bool PlayerItemCheck(XY pos, int type)
 			}
 			if (type == 4) //モンエナ(必殺版)
 			{
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x
+				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x+12
 					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y
 					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 24
 					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 24))
 				{
 					Cnt += 1;
 				}
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x
+				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x+12
 					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y
 					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 24
 					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 48))
 				{
 					Cnt += 1;
 				}
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x
+				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x + 24
 					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y
 					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 48
 					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 24))
 				{
 					Cnt += 1;
 				}
-				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x
-					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y
+				if (((player[i].pos.x - player[i].hitPosS.x) <= pos.x + 24
+					&& (player[i].pos.y + player[i].hitPosE.y) >= pos.y + 24
 					&& (player[i].pos.x + player[i].hitPosE.x) >= pos.x + 48
 					&& (player[i].pos.y - player[i].hitPosS.y) <= pos.y + 48))
 				{
@@ -2121,6 +2252,10 @@ bool PlayerItemCheck(XY pos, int type)
 				if (Cnt != 0)
 				{
 					player[i].Ex = player[i].Ex + 30;
+					if (player[i].Ex > player[i].ExLimit)
+					{
+						player[i].Ex = player[i].ExLimit;
+					}
 					PlaySoundMem(GetSound, DX_PLAYTYPE_BACK);
 					return true;
 
@@ -2138,7 +2273,9 @@ void PlayerReset(void)
 	{
 		player[i].pos = player[i].defaltpos;
 		player[i].Life = player[i].LifeLimit;
-		Atack.flag = false;
+		player[i].boost = false;
+		player[i].invisible = false;
+
 		ITEM.flag = false;
 		player[i].moveDir = DIR_LEFT;
 
@@ -2146,16 +2283,65 @@ void PlayerReset(void)
 		{
 			player[i].moveDir = DIR_RIGHT;
 		}
-		/*player[]*/
-
 	}
 	for (int i = 0; i < SHOT_MAX; i++)
 	{
 		shot[i].flag = false;
 	}
+
+	for (int i = 0; i < ATACK_MAX; i++)
+	{
+		Atack[i].flag = false;
+	}
+
 	for (int i = 0; i < EXATACK_MAX; i++)
 	{
 		ExAtack[i].flag = false;
 	}
 
+}
+void SoundChange(void)
+{
+	int cnt = 0;
+	if ((player[0].WinCnt == 1) && (player[1].WinCnt == 1))
+	{
+		cnt += 1;
+	}
+	if ((player[0].WinCnt == 1) && (player[3].WinCnt == 1))
+	{
+		cnt += 1;
+	}
+	if ((player[1].WinCnt == 1) && (player[0].WinCnt == 1))
+	{
+		cnt += 1;
+	}
+	if ((player[1].WinCnt == 1) && (player[2].WinCnt == 1))
+	{
+		cnt += 1;
+	}
+	if ((player[2].WinCnt == 1) && (player[1].WinCnt == 1))
+	{
+		cnt += 1;
+	}
+	if ((player[2].WinCnt == 1) && (player[3].WinCnt == 1))
+	{
+		cnt += 1;
+	}
+	if ((player[3].WinCnt == 1) && (player[0].WinCnt == 1))
+	{
+		cnt += 1;
+	}
+	if ((player[3].WinCnt == 1) && (player[2].WinCnt == 1))
+	{
+		cnt += 1;
+	}
+
+	if (cnt != 0)
+	{
+		StopMusic();
+
+		PlayMusic("Sound/バトル3.mp3", DX_PLAYTYPE_BACK);
+		SetVolumeMusic(200);
+
+	}
 }

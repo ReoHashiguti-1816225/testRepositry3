@@ -1,4 +1,6 @@
 #pragma once
+
+#define ATACK_MAX 4
 #define EXATACK_MAX 10
 
 typedef struct {
@@ -24,7 +26,7 @@ typedef struct {
 
 }ATACK;
 
-extern ATACK Atack/*[PLAYER_TYPE]*/;
+extern ATACK Atack[ATACK_MAX];
 extern ATACK ExAtack[EXATACK_MAX];
 
 void AtackSysinit(void);

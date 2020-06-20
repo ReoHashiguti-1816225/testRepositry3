@@ -12,6 +12,19 @@
 #define PLAYER_IMAGE_MAX 4
 #define PLAYER_TYPE 2
 
+//typedef struct
+//{
+//	XY pos;
+//	MOVE_DIR moveDir;	// 向いている向き
+//	XY offsetSize;		// ｷｬﾗ中央からの左上位置
+//	XY hitPosS;			// 当たり判定用左上
+//	XY hitPosE;			// 当たり判定用右下
+//	bool runFlag;		// 走っているか
+//	bool jumpFlag;		// ｼﾞｬﾝﾌﾟ中か
+//	int animCnt;		// ｱﾆﾒｰｼｮﾝ用
+//	XY_F velocity;		// 移動速度
+//	bool flag;
+//}PLAYER;
 
 
 
@@ -39,3 +52,4 @@ bool PlayerItemCheck(XY pos, int type);
 
 
 void PlayerReset(void);
+void SoundChange(void);
